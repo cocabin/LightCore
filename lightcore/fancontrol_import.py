@@ -126,7 +126,7 @@ def convert_curve(fc, hello, result):
 def import_config(data, hello):
     """FanControl dosyası ya da bu programın kendi yedeği -> ImportResult."""
     result = ImportResult()
-    if isinstance(data, dict) and (data.get(OWN_FORMAT) or data.get("rgbkontrol_fans")):
+    if isinstance(data, dict) and data.get(OWN_FORMAT):
         result.curves = list(data.get("curves", []))
         result.channels = {cid: ch for cid, ch in data.get("channels", {}).items()
                            if cid in _ids(hello, "controls")}

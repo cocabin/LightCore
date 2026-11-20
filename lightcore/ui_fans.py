@@ -1326,7 +1326,8 @@ class FansPage:
                         ImportDialog(self, fcimp.import_config(data, self.hello), os.path.basename(path))
                     except ValueError as e:
                         self.import_desc.configure(text=str(e), fg=RED)
-            values = self.planner.desired(self.cfg(), m["temps"], game=self.app.game_mode)
+            values = self.planner.desired(self.cfg(), m["temps"], game=self.app.game_mode,
+                                         current={k: c.get("value") for k, c in m["controls"].items()})
             self._report_missing_sources()
             if self.app.game_mode:
                 self.calibrations.clear()
@@ -1425,7 +1426,7 @@ class FansPage:
             files = sorted(os.listdir(self._backup_dir()), reverse=True)
         except OSError:
             files = []
-        self.backup_list.set_options([(f, f[:-5].replace("-", ":", 0)) for f in files] or [("", "Henüz yedek yok")])
+        self.backup_list.set_options([(f, f[:11] + f[11:-5].replace("-", ":")) for f in files] or [("", "Henüz yedek yok")])
         self.backup_list.set_current(None)
 
     def restore_backup(self, name):

@@ -139,16 +139,17 @@ def _csc():
 
 def build_host(out_dir, lib_dir):
     """FanHost.exe'yi derler (kaynak değişmediyse yeniden derlemez). Yolunu döndürür."""
-    source = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FanHost.cs")
+    here = os.path.dirname(os.path.abspath(__file__))
+    source, rules = os.path.join(here, "FanHost.cs"), os.path.join(here, "FanRules.cs")
     exe = os.path.join(out_dir, "FanHost.exe")
     bundled = os.path.join(lib_dir, "FanHost.exe")
     if os.path.isfile(bundled):  # hazır pakette önceden derlenmiş gelir
         return bundled
-    if os.path.isfile(exe) and os.path.getmtime(exe) >= os.path.getmtime(source):
+    if os.path.isfile(exe) and os.path.getmtime(exe) >= max(os.path.getmtime(source), os.path.getmtime(rules)):
         return exe
     os.makedirs(out_dir, exist_ok=True)
     cmd = [_csc(), "/nologo", "/target:exe", "/platform:x64", "/optimize", f"/out:{exe}",
-           f"/reference:{os.path.join(lib_dir, LHM_DLL)}", "/reference:System.Web.Extensions.dll", source]
+           f"/reference:{os.path.join(lib_dir, LHM_DLL)}", "/reference:System.Web.Extensions.dll", source, rules]
     r = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=120,
                        creationflags=CREATE_NO_WINDOW)
     if r.returncode or not os.path.isfile(exe):
@@ -373,12 +374,15 @@ class FanPlanner:
         linked = curves.get(channel.get("curve"), {})  # kendi eğrisindeki fark korunur (ör. Eşitle +15)
         return value + (linked.get("offset", 0) if linked.get("type") == "sync" else 0)
 
-    def desired(self, fan_cfg, temps, now=None, game=False):
+    def desired(self, fan_cfg, temps, now=None, game=False, current=None):
         """fan_cfg: {"curves": [eğri, ...], "channels": {kontrol_id: kanal ayarı}}.
         Kanal: mode auto|game|curve, value, curve (ad), offset, step_up/step_down (%/sn),
         minimum, start, stop. Değerler: {kontrol_id: yüzde ya da None (BIOS)}.
-        game: oyun modu açık: eğri kullanan fanlar oyun eğrisine geçer, Otomatik olanlar BIOS'ta kalır."""
+        game: oyun modu açık: eğri kullanan fanlar oyun eğrisine geçer, Otomatik olanlar BIOS'ta kalır.
+        current: FanHost'un bildirdiği o anki hızlar {kontrol_id: yüzde}: BIOS'taki fanı izleyen Eşitle eğrisi
+        onun gerçek hızını kullanır (yoksa "hesaplanamadı" sayılıp %100 olurdu)."""
         now = time.monotonic() if now is None else now
+        self._outputs.update({k: float(v) for k, v in (current or {}).items() if isinstance(v, (int, float))})
         self.missing_sources = set()
         curves = {c["name"]: c for c in fan_cfg.get("curves", []) if c.get("name")}
         channels = fan_cfg.get("channels", {})

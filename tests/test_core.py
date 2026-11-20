@@ -872,25 +872,47 @@ class ConfigTests(unittest.TestCase):
             path = os.path.join(d, "lightcore_config.json")
             with open(path, "w", encoding="utf-8") as f:
                 json.dump({"hue": {"ip": "1.2.3.4"}}, f)
-            self.assertEqual(load_config(path, search_dirs=[]), {"hue": {"ip": "1.2.3.4"}})
+            self.assertEqual(load_config(path), {"hue": {"ip": "1.2.3.4"}})
 
-    def test_first_run_takes_over_old_version_folders(self):
-        # Kullanıcının durumu: Hue eski sürüm klasöründe, fan ayarları yeni klasörde.
-        import json
+    def test_screenshots_saved_in_same_second_get_own_files(self):
+        import queue
+        from types import SimpleNamespace
+        from unittest import mock
+        from lightcore.ui_shots import ShotsPage
+        with tempfile.TemporaryDirectory() as d:
+            events = queue.Queue()
+            page = SimpleNamespace(last=SimpleNamespace(png=lambda: b"png"), folder=lambda: d,
+                                   app=SimpleNamespace(events=events))
+            with mock.patch("lightcore.ui_shots.time.strftime", return_value="Ekran 2026-01-01 10-00-00"),                     mock.patch("lightcore.ui_shots.threading.Thread",
+                               lambda target, daemon: SimpleNamespace(start=target)):  # iş aynı iş parçacığında
+                for _ in range(3):
+                    ShotsPage.save_last(page)
+            self.assertEqual(sorted(os.listdir(d)), ["Ekran 2026-01-01 10-00-00 (2).png", "Ekran 2026-01-01 10-00-00 (3).png",
+                                                     "Ekran 2026-01-01 10-00-00.png"])
+
+    def test_broken_config_is_kept_aside_not_overwritten(self):
         from lightcore.ui import load_config
         with tempfile.TemporaryDirectory() as d:
-            old, new = os.path.join(d, "lightcore_arayuz_7"), os.path.join(d, "lightcore_fanlar")
-            for folder, data, age in ((old, {"hue": {"ip": "192.0.2.1", "username": "u"}, "disabled": ["a"]}, 100),
-                                      (new, {"fans": {"enabled": True}, "disabled": ["b"]}, 0)):
-                os.makedirs(folder)
-                p = os.path.join(folder, "lightcore_config.json")
-                with open(p, "w", encoding="utf-8") as f:
-                    json.dump(data, f)
-                os.utime(p, (time.time() - age, time.time() - age))
-            cfg = load_config(os.path.join(d, "appdata", "lightcore_config.json"), search_dirs=[new, old])
-        self.assertEqual(cfg["hue"]["ip"], "192.0.2.1")
-        self.assertEqual(cfg["fans"], {"enabled": True})
-        self.assertEqual(cfg["disabled"], ["b"])  # en yeni dosyadaki kazanır
+            path = os.path.join(d, "lightcore_config.json")
+            self.assertEqual(load_config(path), {})  # ilk açılış
+            with open(path, "w", encoding="utf-8") as f:
+                f.write('{"fans": {"curves": [1, 2')  # yarıda kesilmiş yazma
+            self.assertEqual(load_config(path), {})
+            self.assertFalse(os.path.exists(path))
+            with open(path + ".bozuk", encoding="utf-8") as f:
+                self.assertIn('"fans"', f.read())  # kullanıcının ayarları kaybolmadı
+
+    def test_save_replaces_file_in_one_step(self):
+        import json
+        from types import SimpleNamespace
+        from lightcore.ui import App
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "lightcore_config.json")
+            app = SimpleNamespace(config={"a": 1}, config_path=path, _saved_text=None, _status=lambda *a: None)
+            App._save_config(app)
+            with open(path, encoding="utf-8") as f:
+                self.assertEqual(json.load(f), {"a": 1})
+            self.assertEqual(os.listdir(d), ["lightcore_config.json"])  # .tmp kalmadı
 
 
 class LauncherTests(unittest.TestCase):
@@ -1244,6 +1266,14 @@ class GameTests(unittest.TestCase):
         cfg = {"channels": {"kasa": {"mode": "game"}}}
         self.assertEqual(p.desired(cfg, {"c": 65, "g": 40}, now=0.0)["kasa"], 35.0)
 
+    def test_sync_follows_real_speed_of_bios_fan(self):
+        p = self._planner()
+        cfg = {"curves": [{"type": "sync", "name": "Takip", "control": "cpu", "offset": 5}],
+               "channels": {"cpu": {"mode": "auto"}, "kasa": {"mode": "curve", "curve": "Takip"}}}
+        current = {"cpu": 38.0, "kasa": 50.0}
+        self.assertEqual(p.desired(cfg, {"c": 45, "g": 40}, now=0.0, current=current)["kasa"], 43.0)  # %100 değil
+        self.assertEqual(self._planner().desired(cfg, {"c": 45, "g": 40}, now=0.0)["kasa"], 100.0)  # hız bilinmiyorsa güvenli
+
     def test_custom_game_curve_is_used_and_bad_one_falls_back(self):
         from lightcore.fans import GAME_CURVE, game_curve_of
         cfg = {"channels": {"kasa": {"mode": "game"}},
@@ -1313,6 +1343,44 @@ class ReportTests(unittest.TestCase):
         self.assertNotIn("192.0.2.5", text)
         self.assertNotIn("abcdefghijklmnop", text)
         self.assertIn("tamam", text)
+
+
+@unittest.skipUnless(os.name == "nt", "Windows'un C# derleyicisi gerekir")
+class FanRulesTests(unittest.TestCase):
+    """FanHost'un güvenlik kuralları (FanRules.cs) donanımsız derlenip denenir."""
+
+    def test_safety_rules(self):
+        import subprocess
+        from lightcore import fans
+        probe = r"""
+using System;
+static class Probe {
+    static void Main() {
+        double n = double.NaN;
+        Console.WriteLine(string.Join(" ", new object[] {
+            FanRules.Emergency(false, 89, 50, 70), FanRules.Emergency(false, 90, 50, 70),
+            FanRules.Emergency(false, 50, 85, 70), FanRules.Emergency(false, 50, 50, 100),
+            FanRules.Emergency(true, 86, 50, 70), FanRules.Emergency(true, 84.9, 79.9, 94.9),
+            FanRules.Emergency(false, n, n, n),
+            FanRules.Clamp(10, 0, 100, false), FanRules.Clamp(10, 0, 100, true), FanRules.Clamp(150, 0, 100, false),
+            FanRules.Clamp(50, 30, 80, false), FanRules.Clamp(20, 30, 100, false),
+            FanRules.Stale(9.9), FanRules.Stale(10.1) }));
+    }
+}"""
+        with tempfile.TemporaryDirectory() as d:
+            src, exe = os.path.join(d, "probe.cs"), os.path.join(d, "probe.exe")
+            with open(src, "w", encoding="utf-8") as f:
+                f.write(probe)
+            rules = os.path.join(os.path.dirname(fans.__file__), "FanRules.cs")
+            subprocess.run([fans._csc(), "/nologo", f"/out:{exe}", src, rules], check=True, capture_output=True)
+            out = subprocess.run([exe], capture_output=True, text=True, check=True).stdout.split()
+        self.assertEqual(out, ["False", "True",            # işlemci 90°C'de acil durum
+                               "True", "True",             # ekran kartı 85°C, sıcak nokta 100°C
+                               "True", "False",            # çıkış 5°C aşağıdan: 86'da sürer, sınırların altında biter
+                               "False",                    # okunamayan sıcaklık acil durum saymaz
+                               "25", "60", "100",          # en az %25, pompa %60, en fazla %100
+                               "50", "30",                 # kanalın kendi sınırları
+                               "False", "True"])           # 10 sn sinyal yoksa BIOS
 
 
 class LangTests(unittest.TestCase):

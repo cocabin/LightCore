@@ -11,7 +11,7 @@
 //
 // Komutlar: {"cmd":"set","values":{"<kontrol id>": 40, "<id>": null}}  (null = BIOS)
 //           {"cmd":"quit"}
-// Derleme: lightcore/fans.py, Windows'un kendi csc.exe'si ile (indirme gerekmez).
+// Derleme: lightcore/fans.py, Windows'un kendi csc.exe'si ile, FanRules.cs ile birlikte (indirme gerekmez).
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,11 +50,7 @@ static class Program
 
 class Host
 {
-    const double MinPercent = 25, PumpMinPercent = 60;
-    const double CpuLimit = 90, GpuLimit = 85, HotspotLimit = 100;
-    const double EmergencyClear = 5;    // acil durum sınırın bu kadar altına inince biter (sınırda gidip gelmesin)
-    // Arayüz her durum mesajına (3 sn) yanıt verir; kısa takılmalarda fanlar BIOS'a düşmesin diye 10 sn.
-    const double HeartbeatSeconds = 10;
+    // Sınırlar ve kararlar FanRules.cs'te (donanımsız test edilir).
     const int LoopMilliseconds = 3000;  // sensör okuma en pahalı iş; fan için 3 sn yeterli, sinyal süresi 5 sn
     const double RewriteSeconds = 30;   // değişmeyen hız yazılmaz, ama uyku sonrası için ara ara tazelenir
 
@@ -201,9 +197,7 @@ class Host
         double cpu = Max(cpuTemps);
         double gpu = Max(gpuCores);
         double hot = Max(gpuHot);
-        bool emergency = wasEmergency
-            ? cpu >= CpuLimit - EmergencyClear || gpu >= GpuLimit - EmergencyClear || hot >= HotspotLimit - EmergencyClear
-            : cpu >= CpuLimit || gpu >= GpuLimit || hot >= HotspotLimit;
+        bool emergency = FanRules.Emergency(wasEmergency, cpu, gpu, hot);
         if (emergency != wasEmergency)
         {
             wasEmergency = emergency;
@@ -215,7 +209,7 @@ class Host
         lock (gate)
         {
             want = wanted;
-            stale = (DateTime.UtcNow - lastCommand).TotalSeconds > HeartbeatSeconds;
+            stale = FanRules.Stale((DateTime.UtcNow - lastCommand).TotalSeconds);
         }
         bool rewrite = (DateTime.UtcNow - lastRewrite).TotalSeconds >= RewriteSeconds;
         if (rewrite) lastRewrite = DateTime.UtcNow;
@@ -233,8 +227,7 @@ class Host
                     written.Remove(id);
                     continue;
                 }
-                double floor = Math.Max(c.Control.MinSoftwareValue, IsPump(c) ? PumpMinPercent : MinPercent);
-                double v = Math.Min(Math.Min(100, c.Control.MaxSoftwareValue), Math.Max(floor, value.Value));
+                double v = FanRules.Clamp(value.Value, c.Control.MinSoftwareValue, c.Control.MaxSoftwareValue, IsPump(c));
                 double last;
                 if (rewrite || !written.TryGetValue(id, out last) || last != v)
                 {
@@ -287,7 +280,7 @@ class Host
         foreach (ISensor c in controls)
         {
             var d = Describe(c);
-            d["min"] = Math.Max(c.Control.MinSoftwareValue, IsPump(c) ? PumpMinPercent : MinPercent);
+            d["min"] = Math.Max(c.Control.MinSoftwareValue, IsPump(c) ? FanRules.PumpMinPercent : FanRules.MinPercent);
             d["max"] = c.Control.MaxSoftwareValue;
             d["pump"] = IsPump(c);
             cs.Add(d);
@@ -297,8 +290,9 @@ class Host
         var fs = new List<object>();
         foreach (ISensor f in fans) fs.Add(Describe(f));
         Emit(new Dictionary<string, object> { { "type", "hello" }, { "controls", cs }, { "temps", ts }, { "fans", fs },
-            { "limits", new Dictionary<string, object> { { "min", MinPercent }, { "pump_min", PumpMinPercent },
-                { "cpu", CpuLimit }, { "gpu", GpuLimit }, { "hotspot", HotspotLimit }, { "heartbeat", HeartbeatSeconds } } } });
+            { "limits", new Dictionary<string, object> { { "min", FanRules.MinPercent }, { "pump_min", FanRules.PumpMinPercent },
+                { "cpu", FanRules.CpuLimit }, { "gpu", FanRules.GpuLimit }, { "hotspot", FanRules.HotspotLimit },
+                { "heartbeat", FanRules.HeartbeatSeconds } } } });
     }
 
     void EmitState()
@@ -312,7 +306,7 @@ class Host
             cs[ids[c]] = new Dictionary<string, object> { { "value", Value(c) },
                 { "software", software.Contains(ids[c]) } };
         bool stale;
-        lock (gate) stale = (DateTime.UtcNow - lastCommand).TotalSeconds > HeartbeatSeconds;
+        lock (gate) stale = FanRules.Stale((DateTime.UtcNow - lastCommand).TotalSeconds);
         Emit(new Dictionary<string, object> { { "type", "state" }, { "temps", ts }, { "fans", fs }, { "controls", cs },
             { "emergency", wasEmergency }, { "stale", stale } });
     }

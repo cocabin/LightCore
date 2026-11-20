@@ -95,7 +95,6 @@ PEACH, ON_PEACH = "#F5A56C", "#3B1C07"  # tek vurgu düğmesi
 FONT = "Segoe UI"
 BOLD = "Segoe UI Semibold"
 
-OLD_CONFIG = ("RGB Kontrol", "rgbcore_config.json")  # önceki sürümün adları: ayarlar kaybolmasın
 LOG_MAX_BYTES = 512 * 1024
 STALL_SECONDS = 3.0  # hareketli efektte bu kadar süre yazılamayan cihaz "Takıldı" sayılır
 FPS = 25  # hareketli efektler; LED geçişlerinde gözle akıcı, fazlası yalnızca CPU harcar
@@ -179,40 +178,23 @@ def config_dir():
     return os.path.join(base, "LightCore")
 
 
-def _read_json(path):
+def load_config(path):
+    """Ayar dosyasını okur; yoksa boş ayar. Okunamayan dosya silinmez, yanına .bozuk olarak taşınır:
+    ilk kayıt onun üstüne boş ayar yazmasın, gerekirse elle kurtarılsın."""
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-        return data if isinstance(data, dict) else {}
-    except (OSError, ValueError):
+        if isinstance(data, dict):
+            return data
+    except FileNotFoundError:
         return {}
-
-
-def load_config(path, search_dirs=None):
-    """Ayar dosyasını okur. Yoksa (ilk açılış ya da eski sürümden geçiş) eski sürümlerin
-    program klasörüne yazdığı lightcore_config.json'lardan devralır: bu klasör ve yanındaki
-    klasörler, en yeniden eskiye; her ayar (hue, fans, disabled) bulunduğu en yeni dosyadan."""
-    if os.path.isfile(path):
-        return _read_json(path)
-    if search_dirs is None:
-        old = os.path.join(os.path.dirname(config_dir()), *OLD_CONFIG)
-        if os.path.isfile(old):
-            return _read_json(old)
-    if search_dirs is None:
-        here = program_dir()
-        parent = os.path.dirname(here)
-        try:
-            siblings = [os.path.join(parent, n) for n in os.listdir(parent)]
-        except OSError:
-            siblings = []
-        search_dirs = [here] + [d for d in siblings if d != here and os.path.isdir(d)]
-    found = [os.path.join(d, n) for d in search_dirs for n in (CONFIG_NAME, OLD_CONFIG[1])]
-    found = sorted((f for f in found if os.path.isfile(f)), key=os.path.getmtime, reverse=True)
-    config = {}
-    for f in found:
-        for key, value in _read_json(f).items():
-            config.setdefault(key, value)
-    return config
+    except (OSError, ValueError):
+        pass
+    try:
+        os.replace(path, path + ".bozuk")
+    except OSError:
+        pass
+    return {}
 
 
 def _hex(rgb):
@@ -998,7 +980,7 @@ def make_backup(config, state, palette):
 
 def check_backup(data):
     """Bozuk ya da yanlış dosyayı uygulamadan önce reddeder."""
-    if not isinstance(data, dict) or data.get("type") not in ("lightcore-backup", "rgbkontrol-backup"):
+    if not isinstance(data, dict) or data.get("type") != "lightcore-backup":
         raise ValueError("Bu dosya LightCore yedeği değil.")
     lights = data.get("lights")
     if not isinstance(lights, dict) or not all(k in lights for k in LIGHT_KEYS):
@@ -1030,6 +1012,8 @@ class App:
         self.log_path = os.path.join(program_dir(), LOG_NAME)
         self.config_path = os.path.join(config_dir(), CONFIG_NAME)
         self.config = migrate_config(load_config(self.config_path))
+        if os.path.isfile(self.config_path + ".bozuk") and not os.path.isfile(self.config_path):
+            self.log(f"ayar dosyası okunamadı, {CONFIG_NAME}.bozuk olarak saklandı; ayarlar baştan başlıyor")
         lang.install(self.config.get("language") or lang.default_language())
         self._last_health = self._last_fill = self._last_usage = 0.0
         self.usage = ProcessUsage()
@@ -1357,8 +1341,12 @@ class App:
             return  # değişiklik yok: diske yazılmaz
         try:
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
-            with open(self.config_path, "w", encoding="utf-8") as f:
+            tmp = self.config_path + ".tmp"  # yarıda kesilen yazma ayar dosyasını bozmasın: önce yaz, sonra değiştir
+            with open(tmp, "w", encoding="utf-8") as f:
                 f.write(text)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, self.config_path)
             self._saved_text = text
         except OSError as e:
             self._status(f"Ayarlar kaydedilemedi: {e}", RED)

@@ -15,7 +15,6 @@ import tempfile
 from xml.sax.saxutils import escape
 
 TASK_NAME = "LightCore"
-OLD_TASK_NAME = "RGB Kontrol"  # önceki sürüm: yeni görev kurulunca silinir
 CREATE_NO_WINDOW = 0x08000000
 
 
@@ -68,7 +67,7 @@ def status(program_dir):
     """(açık mı, bu klasörü mü başlatıyor)."""
     r = _run(["/Query", "/TN", TASK_NAME, "/XML"])
     if r.returncode:
-        return _run(["/Query", "/TN", OLD_TASK_NAME]).returncode == 0, False
+        return False, False
     return True, program_dir.lower() in r.stdout.lower()
 
 
@@ -85,11 +84,9 @@ def enable(program_dir, elevated):
             pass
     if r.returncode:
         raise RuntimeError((r.stderr or r.stdout).strip() or "Görev oluşturulamadı.")
-    _run(["/Delete", "/TN", OLD_TASK_NAME, "/F"])
 
 
 def disable():
-    _run(["/Delete", "/TN", OLD_TASK_NAME, "/F"])
     r = _run(["/Delete", "/TN", TASK_NAME, "/F"])
     if r.returncode and "bulunamıyor" not in (r.stderr + r.stdout).lower() \
             and "cannot find" not in (r.stderr + r.stdout).lower():

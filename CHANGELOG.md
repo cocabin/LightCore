@@ -1,5 +1,14 @@
 # Değişiklikler
 
+## Sonraki sürüm (yayımlanmadı)
+
+- **Ayarlar artık bozulmuyor:** ayar dosyası önce geçici dosyaya yazılıp tek adımda yerine konuyor. Yazma yarıda kesilse de (elektrik kesintisi, Windows'un kapanışta programı sonlandırması) eski ayarlar sağlam kalıyor. Okunamayan dosya silinmiyor, `lightcore_config.json.bozuk` olarak saklanıyor.
+- **Eşitle eğrisi BIOS'taki fanı doğru izliyor:** izlenen fan Otomatik'teyken, onu izleyen fanlar %100'e çıkmak yerine o fanın gerçek hızını kullanıyor.
+- **Fan güvenlik kuralları test ediliyor:** en az hız, sıcaklık sınırı, acil durumdan çıkış ve sinyal süresi `FanRules.cs` dosyasına alındı; testler donanım olmadan derleyip deniyor.
+- Aynı saniyede kaydedilen ekran görüntüleri artık birbirinin üstüne yazılmıyor: `Ekran ... (2).png`.
+- "Önceki ayarlara dön" listesinde saat 05:41:16 biçiminde görünüyor.
+- Eski "RGB Kontrol" sürümünden ayar ve başlangıç görevi taşıyan kod kaldırıldı.
+
 ## 0.0.5 (beta)
 
 İlk herkese açık deneme sürümü. Hata bulursan [Issues](https://github.com/cocabin/LightCore/issues) sayfasında bildir; Log sayfasındaki **Hata raporu kopyala** kişisel bilgileri çıkarılmış bir rapor verir.

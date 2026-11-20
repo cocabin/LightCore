@@ -773,13 +773,20 @@ class ShotsPage:
             return
         shot = self.last
         folder = self.folder()
-        path = os.path.join(folder, time.strftime("Ekran %Y-%m-%d %H-%M-%S.png"))
+        name = time.strftime("Ekran %Y-%m-%d %H-%M-%S")
 
         def work():
             try:
                 os.makedirs(folder, exist_ok=True)
-                with open(path, "wb") as f:
-                    f.write(shot.png())
+                n = 1
+                while True:  # aynı saniyedeki ikinci görüntü birincinin üstüne yazılmasın: "Ekran ... (2).png"
+                    path = os.path.join(folder, name + (f" ({n})" if n > 1 else "") + ".png")
+                    try:
+                        with open(path, "xb") as f:
+                            f.write(shot.png())
+                        break
+                    except FileExistsError:
+                        n += 1
                 self.app.events.put(("shot_note", "Kaydedildi", path, GREEN, path))
             except OSError as e:
                 self.app.events.put(("shot_note", "Kaydedilemedi", str(e), RED))
