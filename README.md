@@ -103,8 +103,8 @@ LightCore [GNU GPL v3](LICENSE) ile lisanslıdır: kullanabilir, değiştirebili
 
 Bu depo aşağıdakileri içermez; hazır pakette yanında gelirler. Lisans metinleri [`licenses`](licenses) klasöründedir, pakette `LICENSES` olarak gelir; hangi dosyanın neye ait olduğu `licenses/BENIOKU.txt`'de yazar.
 
-- [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 1.0, GPL-2.0-or-later: değiştirilmeden, ayrı süreç olarak SDK bağlantısıyla (içinde Qt 6 LGPL-3.0, libusb LGPL-2.1, hidapi BSD, PawnIOLib)
-- [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) 0.9.6, MPL-2.0, ve bağımlılıkları (BlackSharp/DiskInfoToolkit/RAMSPDToolkit MPL-2.0, HidSharp Apache-2.0, .NET kütüphaneleri MIT)
+- [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB/-/tree/release_1.1) 1.1, GPL-2.0-or-later: değiştirilmeden, ayrı süreç olarak SDK bağlantısıyla (içinde [Qt 6.8.3](https://download.qt.io/archive/qt/6.8/6.8.3/single/) LGPL-3.0, libusb LGPL-2.1, hidapi BSD, PawnIOLib)
+- [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/tree/v0.9.6) 0.9.6, MPL-2.0, ve bağımlılıkları (BlackSharp/DiskInfoToolkit/RAMSPDToolkit MPL-2.0, HidSharp Apache-2.0, .NET kütüphaneleri MIT)
 - [bleak](https://github.com/hbldh/bleak) ve [PyWinRT](https://github.com/pywinrt/pywinrt), MIT: Bluetooth şerit için
 - Python (PSF), Tcl/Tk (BSD benzeri), PyInstaller önyükleyicisi (GPL-2.0, dağıtım istisnasıyla)
 - [PawnIO](https://pawnio.eu): pakette yoktur; program içinden geliştiricinin resmi winget paketiyle kurulur

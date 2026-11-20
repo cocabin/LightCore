@@ -4,11 +4,12 @@ LightCore ve icindeki ucuncu taraf bilesenler / LightCore and bundled third-part
 LightCore - GNU GPL v3 (LightCore-LICENSE.txt)
   Kaynak kod / Source: https://github.com/cocabin/LightCore
 
-openrgb\ klasoru: OpenRGB 1.0, resmi Windows surumu, degistirilmeden / official Windows build, unmodified
+openrgb\ klasoru: OpenRGB 1.1, resmi Windows surumu, degistirilmeden / official Windows build, unmodified
   OpenRGB - GNU GPL v2 ya da sonrasi / or later (OpenRGB-LICENSE.txt)
-    Kaynak / Source: https://gitlab.com/CalcProgrammer1/OpenRGB
-  Qt 6 - GNU LGPL v3 (Qt-LGPL-3.0.txt; LGPL v3, GPL v3'un ek izinleridir: LightCore-LICENSE.txt)
-    Kaynak / Source: https://download.qt.io/official_releases/qt/
+    Bu surumun kaynagi / Source of this exact version (tag release_1.1, commit 8e16de27858cf2be6af54a33ce003df74cb9fd3e):
+    https://gitlab.com/CalcProgrammer1/OpenRGB/-/tree/release_1.1
+  Qt 6.8.3 - GNU LGPL v3 (Qt-LGPL-3.0.txt; LGPL v3, GPL v3'un ek izinleridir: LightCore-LICENSE.txt)
+    Kaynak / Source: https://download.qt.io/archive/qt/6.8/6.8.3/single/
     Qt DLL'leri ayni surumden derlenmis kendi kopyanizla degistirilebilir. / The Qt DLLs may be replaced with your own build.
   libusb - GNU LGPL v2.1 (LGPL-2.1.txt)        Kaynak / Source: https://github.com/libusb/libusb
   hidapi - BSD (hidapi-LICENSE.txt)              Kaynak / Source: https://github.com/libusb/hidapi
@@ -19,7 +20,7 @@ openrgb\ klasoru: OpenRGB 1.0, resmi Windows surumu, degistirilmeden / official 
 
 fan\ klasoru: LibreHardwareMonitorLib 0.9.6 (NuGet) ve bagimliliklari / and dependencies
   LibreHardwareMonitorLib - MPL 2.0 (LibreHardwareMonitor-LICENSE.txt)
-    Kaynak / Source: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+    Bu surumun kaynagi / Source of this version: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/tree/v0.9.6
   BlackSharp.Core, DiskInfoToolkit, RAMSPDToolkit-NDD - MPL 2.0 (LibreHardwareMonitor-LICENSE.txt ile ayni metin / same text)
     Kaynak / Source: https://github.com/Blacktempel
   HidSharp - Apache 2.0 (HidSharp-LICENSE.txt)  Kaynak / Source: https://www.zer7.com/software/hidsharp
