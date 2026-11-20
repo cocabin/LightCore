@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+# program çalışınca oluşur; log dosyasında cihaz adları ve yerel adresler bulunur
+lightcore_log.txt*
+rgbcore_log.txt*
+lightcore_config.json
+rgbcore_config.json
+*yedek*.json
+fanhost/
+openrgb/
+OpenRGB/
+dist/
+build/
+*.spec
+third_party/
