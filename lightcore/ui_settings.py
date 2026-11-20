@@ -6,15 +6,17 @@ import tkinter as tk
 import os
 from tkinter import messagebox
 
+from . import __version__
 from . import fans as fanctl
 from . import lang
 from .launcher import find_openrgb
 from .ui_fans import Dropdown, find_fan_lib
-from .ui import ACCENT, AMBER, CARD, CONTROL, CONTROL_EDGE, FONT, GREEN, MUTED, TEXT, THEME, THEMES, Pill, Toggle
+from .ui import ACCENT, AMBER, CARD, CONTROL, CONTROL_EDGE, FONT, GREEN, MUTED, RED, TEXT, THEME, THEMES, Pill, Toggle
 
 FEATURES = (("rgb", "LightRGB", "RGB ve Philips Hue. Kapalıyken OpenRGB hiç başlamaz."),
             ("fan", "LightFan", "Fan kontrolü. Kapalıyken FanHost çalışmaz, fanları BIOS sürer."),
             ("snap", "LightSnap", "Ekran görüntüsü. Kapalıyken kısayollar Windows'tan kaldırılır."))
+ISSUES_URL = "https://github.com/cocabin/LightCore/issues"
 CONFLICTS = {"signalrgb.exe": "SignalRGB", "msi center.exe": "MSI Center", "fancontrol.exe": "FanControl"}
 
 
@@ -74,8 +76,13 @@ class SettingsPage:
         Dropdown(right, (("tr", "Türkçe"), ("en", "English")), app.config.get("language") or lang.default_language(),
                  self._set_language, width=160).pack()
         self.checks_box = app._section(self.page, "Kurulum kontrolü")
+        _, right, _ = app._row(self.checks_box, "Sürüm", f"LightCore {__version__} · deneme sürümü: hata bulursan "
+                                                         "GitHub'da bildir (Log sayfasındaki hata raporuyla).")
+        Pill(right, "GitHub", lambda: os.startfile(ISSUES_URL), CARD).pack()
         _, right, self.checks_desc = app._row(self.checks_box, "Eksikler", "Kontrol ediliyor...")
-        Pill(right, "Yeniden kontrol et", self.run_checks, CARD).pack()
+        Pill(right, "Yeniden kontrol et", self.run_checks, CARD).pack(side="right")
+        self.pawnio_button = Pill(right, "PawnIO'yu kur", self.install_pawnio, CARD, style="accent")
+        self.pawnio_missing = False
 
     def _setting_toggle(self, parent, key, default, then=lambda: None):
         toggle = Toggle(parent, lambda: self._flip_setting(toggle, key, then), CARD)
@@ -155,8 +162,9 @@ class SettingsPage:
             if not find_fan_lib():
                 problems.append("LibreHardwareMonitor bulunamadı: programın yanındaki 'fan' klasörü eksik, paketi "
                                 "yeniden aç.")
-            if not fanctl.pawnio_installed():
-                problems.append(f"Fan kontrolü için PawnIO sürücüsü gerekli: {fanctl.PAWNIO_URL} adresinden kur.")
+            self.pawnio_missing = not fanctl.pawnio_installed()
+            if self.pawnio_missing:
+                problems.append("Fan kontrolü için PawnIO sürücüsü gerekli: 'PawnIO'yu kur' düğmesiyle kur.")
         try:
             out = subprocess.run(["tasklist", "/NH", "/FO", "CSV"], capture_output=True, text=True, errors="replace",
                                  timeout=15, creationflags=fanctl.CREATE_NO_WINDOW).stdout.casefold()
@@ -172,3 +180,25 @@ class SettingsPage:
             self.checks_desc.configure(text="\n".join("• " + lang.T(p) for p in problems), fg=AMBER)  # satır satır çevrilir
         else:
             self.checks_desc.configure(text="Eksik yok.", fg=GREEN)
+        if self.pawnio_missing:
+            self.pawnio_button.pack(side="right", padx=(0, 6))
+        else:
+            self.pawnio_button.pack_forget()
+
+    def install_pawnio(self):
+        """Geliştiricinin resmi winget paketinden kurar; bitince kontrol yeniden yapılır."""
+        self.pawnio_button.pack_forget()
+        self.checks_desc.configure(text="PawnIO kuruluyor (winget, resmi paket)... Bu bir iki dakika sürebilir.",
+                                   fg=MUTED)
+        app = self.app
+
+        def work():
+            ok, message = fanctl.install_pawnio()
+            app.events.put(("pawnio", ok, message))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def pawnio_done(self, ok, message):
+        self.app.log(message)
+        self.app._status(message, GREEN if ok else RED)
+        self.run_checks()

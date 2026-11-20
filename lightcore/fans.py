@@ -66,15 +66,9 @@ def curve_value(points, temp):
 
 
 def find_lhm(extra_dirs=()):
-    """LibreHardwareMonitorLib.dll'in bulunduğu klasör: önce verilen klasörler (programın kendi 'fan' klasörü),
-    sonra kurulu FanControl; yoksa None."""
-    dirs = list(extra_dirs)
-    for var, sub in (("ProgramFiles(x86)", "FanControl"), ("ProgramFiles", "FanControl"),
-                     ("LOCALAPPDATA", os.path.join("Programs", "FanControl"))):
-        base = os.environ.get(var)
-        if base:
-            dirs.append(os.path.join(base, sub))
-    for d in dirs:
+    """LibreHardwareMonitorLib.dll'in bulunduğu klasör (programın kendi 'fan' klasörü), yoksa None.
+    Kurulu FanControl'ün klasörüne bakılmaz: FanControl kapalı kaynak, parçaları kullanılmaz."""
+    for d in extra_dirs:
         if os.path.isfile(os.path.join(d, LHM_DLL)):
             return d
     return None
@@ -98,6 +92,32 @@ def pawnio_installed(key=r"SYSTEM\CurrentControlSet\Services\PawnIO"):
         return True
     except OSError:
         return False
+
+
+PAWNIO_WINGET_ID = "namazso.PawnIO"
+
+
+def install_pawnio(timeout=600):
+    """PawnIO'yu geliştiricisinin resmi winget paketinden kurar (pakete koyulmaz: resmi derleme kapalı kaynak,
+    geliştiricisi GPL programların bağlantı vermesini istiyor). Dönüş: (kuruldu mu, açıklama).
+    winget yoksa indirme sayfası açılır."""
+    import shutil
+    winget = shutil.which("winget")
+    if not winget:
+        os.startfile(PAWNIO_URL)
+        return False, "winget bulunamadı; PawnIO'nun indirme sayfası açıldı."
+    try:
+        r = subprocess.run([winget, "install", "--id", PAWNIO_WINGET_ID, "-e", "--source", "winget", "--silent",
+                            "--accept-package-agreements", "--accept-source-agreements"],
+                           capture_output=True, text=True, errors="replace", timeout=timeout,
+                           creationflags=CREATE_NO_WINDOW)
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, f"winget çalıştırılamadı: {e}"
+    if pawnio_installed():
+        restart = r.returncode != 0 or "restart" in (r.stdout + r.stderr).casefold()
+        return True, "PawnIO kuruldu." + (" Bilgisayarı yeniden başlatman gerekebilir." if restart else "")
+    lines = [line.strip() for line in (r.stdout + r.stderr).splitlines() if line.strip() and not set(line.strip()) <= set("-\\|/ █▒")]
+    return False, f"PawnIO kurulamadı (kod {r.returncode}): {lines[-1] if lines else ''}"
 
 
 def is_admin():

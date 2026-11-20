@@ -32,11 +32,11 @@ CARD_W, FAN_H, CURVE_H, TEMP_W, TEMP_H = 290, 290, 290, 200, 96
 FULL_SPEED_WARNING = 120  # saniye
 BACKUP_SECONDS, BACKUP_COUNT = 60, 5
 RESTART_LIMIT, RESTART_WINDOW = 3, 120  # FanHost bu sürede bu kadar çökerse yeniden denenmez
+DBG_TERMINATE_PROCESS = 0x40010004  # Windows kapanışta süreci bu kodla sonlandırır
 
 
 def find_fan_lib():
-    """LibreHardwareMonitor: önce programın kendi 'fan' klasörü (pakette gelir), yoksa kurulu FanControl'ünki.
-    FanControl'ü kurmak gerekmez."""
+    """LibreHardwareMonitor: programın kendi 'fan' klasörü (pakette gelir). FanControl gerekmez."""
     return fanctl.find_lhm([os.path.join(program_dir(), "fan"), program_dir()])
 
 
@@ -1251,8 +1251,8 @@ class FansPage:
                          "kapat (sistem tepsisinden Exit).", AMBER)
             return
         if not fanctl.pawnio_installed():
-            self._status(f"Fan kontrolü için PawnIO sürücüsü gerekli: {fanctl.PAWNIO_URL} adresinden kur, sonra "
-                         "fan kontrolünü yeniden aç.", AMBER)
+            self._status("Fan kontrolü için PawnIO sürücüsü gerekli: Ayarlar > Kurulum kontrolü'ndeki 'PawnIO'yu kur' "
+                         "düğmesiyle kur, sonra fan kontrolünü yeniden aç.", AMBER)
             self.app.log("PawnIO sürücüsü kurulu değil, fan kontrolü başlatılmadı")
             return
         lib = find_fan_lib()
@@ -1348,7 +1348,11 @@ class FansPage:
             was_running = self.host is not None
             self.host = None
             self.toggle.set(False)
-            if m.get("code") not in (0, None) or (was_running and m.get("stderr")):
+            if m.get("code") == DBG_TERMINATE_PROCESS and not m.get("stderr"):
+                # Windows kapanırken / oturum kapanırken sonlandırıldı: çökme değil, yeniden başlatılmaz
+                self.app.log("FanHost Windows tarafından kapatıldı (kapanış ya da oturum kapatma)")
+                self._status("Fan kontrolü Windows tarafından kapatıldı; fanları anakart sürüyor.", AMBER)
+            elif m.get("code") not in (0, None) or (was_running and m.get("stderr")):
                 self.app.log(f"FanHost beklenmedik kapandı (kod {m.get('code')}): {m.get('stderr')}")
                 self._recover(was_running, m)
 

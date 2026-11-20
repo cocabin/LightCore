@@ -187,6 +187,20 @@ for _tr, _en in {
     "Her görüntü panoya alınırken bu klasöre de kaydedilir.": "Every image is also saved to this folder when copied.",
     "Ekran görüntülerinin kaydedileceği klasör": "Folder for saved screenshots",
     "Oyun modu eğrisi": "Game mode curve", "Oyun eğrisi": "Game curve",
+    "Ekran Görüntüsü": "Screenshots", "OpenRGB'ye bağlanılamadı": "OpenRGB did not respond",
+    "PawnIO'yu kur": "Install PawnIO", "Sürüm": "Version",
+    "Fan kontrolü için PawnIO sürücüsü gerekli: 'PawnIO'yu kur' düğmesiyle kur.":
+        "Fan control needs the PawnIO driver: install it with 'Install PawnIO'.",
+    "Fan kontrolü için PawnIO sürücüsü gerekli: Ayarlar > Kurulum kontrolü'ndeki 'PawnIO'yu kur' düğmesiyle kur, sonra "
+    "fan kontrolünü yeniden aç.": "Fan control needs the PawnIO driver: install it with 'Install PawnIO' under Settings > "
+                                  "Setup check, then turn fan control on again.",
+    "PawnIO kuruluyor (winget, resmi paket)... Bu bir iki dakika sürebilir.":
+        "Installing PawnIO (winget, official package)... This can take a minute or two.",
+    "PawnIO kuruldu.": "PawnIO installed.",
+    "PawnIO kuruldu. Bilgisayarı yeniden başlatman gerekebilir.": "PawnIO installed. You may need to restart the PC.",
+    "winget bulunamadı; PawnIO'nun indirme sayfası açıldı.": "winget not found; opened the PawnIO download page.",
+    "Fan kontrolü Windows tarafından kapatıldı; fanları anakart sürüyor.":
+        "Fan control was closed by Windows; the motherboard drives the fans.",
     "Noktayı sürükle, boş yere çift tıklayıp nokta ekle, sağ tıkla sil. Değişiklik anında geçerli olur. Kesikli çizgi: "
     "işlemci ve ekran kartından sıcak olanı.": "Drag a point, double-click empty space to add one, right-click to "
                                                "delete. Changes apply at once. Dashed line: the hotter of CPU and GPU.",
@@ -212,11 +226,11 @@ PATTERNS = [
     (r"^LED Şerit( \d+)? · (.*)$", r"LED Strip\1 · \2"),
     (r"^Bulundu: (.*)$", r"Found: \1"), (r"^Bluetooth · (.*)$", r"Bluetooth · \1"),
     (r"^Bluetooth taraması başarısız: (.*)$", r"Bluetooth scan failed: \1"),
-    (r"^Fan kontrolü için PawnIO sürücüsü gerekli: (\S+) adresinden kur, sonra fan kontrolünü yeniden aç\.$",
-     r"Fan control needs the PawnIO driver: install it from \1, then turn fan control on again."),
-    (r"^Fan kontrolü için PawnIO sürücüsü gerekli: (\S+) adresinden kur\.$",
-     r"Fan control needs the PawnIO driver: install it from \1."),
-    (r"^Hata: (.*)$", r"Error: \1"), (r"^Fan: (.*)$", r"Fan: \1"), (r"^Bağlanılamadı: (.*)$", r"Could not connect: \1"),
+    (r"^PawnIO kurulamadı \(kod (-?\d+)\): (.*)$", r"PawnIO could not be installed (code \1): \2"),
+    (r"^LightCore (\S+) · deneme sürümü: hata bulursan GitHub'da bildir \(Log sayfasındaki hata raporuyla\)\.$",
+     r"LightCore \1 · beta: if you find a bug, report it on GitHub (with the bug report from the Log page)."),
+    (r"^winget çalıştırılamadı: (.*)$", r"Could not run winget: \1"),
+    (r"^Hata: (.*)$", r"Error: \1"), (r"^Fan: (.*)$", r"Fan: \1"), (r"^Bağlanılamadı: (.*)$", lambda m: "Could not connect: " + T(m.group(1))),
     (r"^Tarama başarısız: (.*)$", r"Scan failed: \1"), (r"^Cihazlar taranıyor\.\.\. (\d+) cihaz bulundu$", r"Scanning devices... \1 found"),
     (r"^Ayarlar kaydedilemedi: (.*)$", r"Could not save settings: \1"), (r"^'(.*)' kaydedildi\.$", r"'\1' saved."),
     (r"^'(.*)' hazır ayarlarda var, başka bir ad yaz\.$", r"'\1' already exists in presets, enter another name."),
@@ -273,7 +287,7 @@ def T(text):
     for pattern, template in PATTERNS:
         if re.match(pattern, text):
             return re.sub(pattern, template, text)
-    return text
+    return re.sub(r"%(\d+(?:\.\d+)?)", r"\1%", text)  # sayılar ve grafik etiketleri: %41 -> 41%
 
 
 def default_language():

@@ -1255,6 +1255,33 @@ class GameTests(unittest.TestCase):
         for bad in (None, {}, {"points": [[50, 50]]}, {"points": [["x", 1], [2, 3]]}):
             self.assertEqual(game_curve_of(bad)["points"], [tuple(map(float, p)) for p in GAME_CURVE])
 
+    def test_fan_library_only_from_given_folders(self):
+        import tempfile
+        from lightcore import fans
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(fans.find_lhm([d]))  # FanControl'ün klasörüne bakılmaz
+            open(os.path.join(d, fans.LHM_DLL), "wb").close()
+            self.assertEqual(fans.find_lhm([d]), d)
+
+    def test_pawnio_install_reports_result(self):
+        import shutil
+        import types
+        from unittest import mock
+        from lightcore import fans
+        ok = types.SimpleNamespace(returncode=0, stdout="Successfully installed", stderr="")
+        with mock.patch.object(shutil, "which", return_value="winget"), \
+                mock.patch.object(fans.subprocess, "run", return_value=ok) as run, \
+                mock.patch.object(fans, "pawnio_installed", return_value=True):
+            self.assertEqual(fans.install_pawnio(), (True, "PawnIO kuruldu."))
+            self.assertIn(fans.PAWNIO_WINGET_ID, run.call_args[0][0])
+        bad = types.SimpleNamespace(returncode=5, stdout="", stderr="Access denied")
+        with mock.patch.object(shutil, "which", return_value="winget"), \
+                mock.patch.object(fans.subprocess, "run", return_value=bad), \
+                mock.patch.object(fans, "pawnio_installed", return_value=False):
+            done, message = fans.install_pawnio()
+            self.assertFalse(done)
+            self.assertIn("Access denied", message)
+
     def test_game_curve_survives_export_import(self):
         from lightcore import fancontrol_import as fcimp
         hello = {"controls": [{"id": "kasa", "name": "System Fan #1"}], "temps": []}
@@ -1297,6 +1324,9 @@ class LangTests(unittest.TestCase):
             self.assertEqual(lang.T("Fanlar"), "Fans")
             self.assertEqual(lang.T("3 cihaz hazır."), "3 devices ready.")
             self.assertEqual(lang.T("çevirisi olmayan metin"), "çevirisi olmayan metin")
+            self.assertEqual(lang.T("54°C → %44"), "54°C → 44%")  # yüzde İngilizce yazımla
+            self.assertEqual(lang.T("Program %0.4 · Fan %1.2"), "Program 0.4% · Fan 1.2%")
+            self.assertEqual(lang.T("Bağlanılamadı: OpenRGB'ye bağlanılamadı"), "Could not connect: OpenRGB did not respond")
         finally:
             lang._active = False
 

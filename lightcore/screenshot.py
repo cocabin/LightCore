@@ -12,6 +12,8 @@ import time
 import zlib
 from ctypes import wintypes
 
+from . import __version__
+
 SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 76, 77, 78, 79
 SRCCOPY, CAPTUREBLT = 0x00CC0020, 0x40000000
 CF_DIB, GMEM_MOVEABLE = 8, 0x0002
@@ -501,7 +503,7 @@ def upload(png, provider, custom=None, timeout=60):
              f'filename="ekran.png"\r\nContent-Type: image/png\r\n\r\n').encode()
     body += png + f"\r\n--{boundary}--\r\n".encode()
     request = urllib.request.Request(target["url"], data=bytes(body), method="POST", headers={
-        "Content-Type": f"multipart/form-data; boundary={boundary}", "User-Agent": "LightCore/1.0"})
+        "Content-Type": f"multipart/form-data; boundary={boundary}", "User-Agent": f"LightCore/{__version__}"})
     try:
         with urllib.request.urlopen(request, timeout=timeout) as reply:
             text = reply.read(65536).decode("utf-8", "replace")

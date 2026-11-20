@@ -2573,6 +2573,8 @@ class App:
                     self.set_game(event[1])
                 elif kind == "checks":
                     self.settings_page.show_checks(event[1])
+                elif kind == "pawnio":
+                    self.settings_page.pawnio_done(event[1], event[2])
                 elif kind == "shot":
                     self.shots_page.taken(event[1], event[2])
                 elif kind == "shot_link":

@@ -1,0 +1,42 @@
+LightCore ve icindeki ucuncu taraf bilesenler / LightCore and bundled third-party components
+==========================================================================================
+
+LightCore - GNU GPL v3 (LightCore-LICENSE.txt)
+  Kaynak kod / Source: https://github.com/cocabin/LightCore
+
+openrgb\ klasoru: OpenRGB 1.0, resmi Windows surumu, degistirilmeden / official Windows build, unmodified
+  OpenRGB - GNU GPL v2 ya da sonrasi / or later (OpenRGB-LICENSE.txt)
+    Kaynak / Source: https://gitlab.com/CalcProgrammer1/OpenRGB
+  Qt 6 - GNU LGPL v3 (Qt-LGPL-3.0.txt; LGPL v3, GPL v3'un ek izinleridir: LightCore-LICENSE.txt)
+    Kaynak / Source: https://download.qt.io/official_releases/qt/
+    Qt DLL'leri ayni surumden derlenmis kendi kopyanizla degistirilebilir. / The Qt DLLs may be replaced with your own build.
+  libusb - GNU LGPL v2.1 (LGPL-2.1.txt)        Kaynak / Source: https://github.com/libusb/libusb
+  hidapi - BSD (hidapi-LICENSE.txt)              Kaynak / Source: https://github.com/libusb/hidapi
+  PawnIOLib.dll - GNU GPL v2 ya da sonrasi, ozel istisna ile / or later, with a special exception (PawnIO-LICENSE.txt)
+    Kaynak / Source: https://github.com/namazso/PawnIO
+  *.bin (PawnIO modulleri / modules) - GNU LGPL v2.1 (LGPL-2.1.txt)
+    Kaynak / Source: https://github.com/namazso/PawnIO.Modules
+
+fan\ klasoru: LibreHardwareMonitorLib 0.9.6 (NuGet) ve bagimliliklari / and dependencies
+  LibreHardwareMonitorLib - MPL 2.0 (LibreHardwareMonitor-LICENSE.txt)
+    Kaynak / Source: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+  BlackSharp.Core, DiskInfoToolkit, RAMSPDToolkit-NDD - MPL 2.0 (LibreHardwareMonitor-LICENSE.txt ile ayni metin / same text)
+    Kaynak / Source: https://github.com/Blacktempel
+  HidSharp - Apache 2.0 (HidSharp-LICENSE.txt)  Kaynak / Source: https://www.zer7.com/software/hidsharp
+  Microsoft.* ve System.* DLL'leri - MIT (dotnet-runtime-LICENSE.txt)  Kaynak / Source: https://github.com/dotnet/runtime
+  FanHost.exe - LightCore'un parcasi, GPL v3 (kaynak: lightcore\FanHost.cs)
+
+_internal\ klasoru (PyInstaller ile paketlenmis Python / Python bundled with PyInstaller)
+  Python - PSF lisansi (Python-LICENSE.txt; icindeki kutuphanelerin lisanslari dahil)
+  Tcl/Tk - BSD benzeri / BSD-style (Tcl-Tk-LICENSE.txt)
+  PyInstaller onyukleyicisi / bootloader - GPL v2, dagitim istisnasi ile / with bootloader exception (PyInstaller-LICENSE.txt)
+  bleak, PyWinRT - MIT (bleak-LICENSE.txt, PyWinRT-LICENSE.txt); typing_extensions - PSF (typing_extensions-LICENSE.txt)
+    Kaynak / Source: https://github.com/hbldh/bleak , https://github.com/pywinrt/pywinrt
+
+Pakette OLMAYANLAR / NOT included
+  PawnIO surucusu / driver: resmi imzali surumu kapali kaynaktir; LightCore onu pakete koymaz. Ayarlar > Kurulum
+  kontrolu'ndeki "PawnIO'yu kur" dugmesi gelistiricinin resmi winget paketini (namazso.PawnIO) kurar.
+  The official signed build is proprietary and is not bundled; the "Install PawnIO" button installs the developer's
+  official winget package. https://pawnio.eu
+  FanControl: kullanilmaz ve gerekmez. LightCore yalnizca FanControl'un yedek dosyasini (.json) iceri aktarabilir.
+  FanControl is neither used nor required; LightCore can only import its backup (.json) file.

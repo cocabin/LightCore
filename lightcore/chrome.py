@@ -2,7 +2,7 @@
 
 Tk'nin override-redirect penceresi Windows'ta görev çubuğunda görünmez; aşağıdaki pencere stilleri
 bunu açar. Küçült düğmesi pencereyi gizler, simge tepsisinden geri gelir. Sürükleme bilerek Windows'un modal taşıma döngüsüyle yapılmaz: o döngü
-sürerken Tk olayları durur ve fan sinyali (FanHost, 5 sn) gecikebilir.
+sürerken Tk olayları durur ve fan sinyali (FanHost, 10 sn) gecikebilir.
 """
 import ctypes
 import time

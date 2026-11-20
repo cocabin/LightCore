@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using System.Security;
 using System.Text;
 using System.Threading;
 using System.Web.Script.Serialization;
@@ -29,7 +31,7 @@ static class Program
     static int Main(string[] args)
     {
         libDir = args.Length > 0 ? args[0] : AppDomain.CurrentDomain.BaseDirectory;
-        // LibreHardwareMonitorLib ve bağımlılıkları FanControl'ün klasöründen yüklenir.
+        // LibreHardwareMonitorLib ve bağımlılıkları verilen klasörden (programın 'fan' klasörü) yüklenir.
         AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
         {
             string path = Path.Combine(libDir, new AssemblyName(e.Name).Name + ".dll");
@@ -50,7 +52,9 @@ class Host
 {
     const double MinPercent = 25, PumpMinPercent = 60;
     const double CpuLimit = 90, GpuLimit = 85, HotspotLimit = 100;
-    const double HeartbeatSeconds = 5;
+    const double EmergencyClear = 5;    // acil durum sınırın bu kadar altına inince biter (sınırda gidip gelmesin)
+    // Arayüz her durum mesajına (3 sn) yanıt verir; kısa takılmalarda fanlar BIOS'a düşmesin diye 10 sn.
+    const double HeartbeatSeconds = 10;
     const int LoopMilliseconds = 3000;  // sensör okuma en pahalı iş; fan için 3 sn yeterli, sinyal süresi 5 sn
     const double RewriteSeconds = 30;   // değişmeyen hız yazılmaz, ama uyku sonrası için ara ara tazelenir
 
@@ -127,9 +131,24 @@ class Host
         }
     }
 
+    readonly HashSet<IHardware> broken = new HashSet<IHardware>();
+
+    // Bir donanımın okuması sürücü içinde patlarsa (AccessViolation dahil) bütün süreç düşmesin:
+    // o donanım bir daha okunmaz, diğer fanlar sürülmeye devam eder.
+    [HandleProcessCorruptedStateExceptions, SecurityCritical]
     void UpdateAll()
     {
-        foreach (IHardware h in hardware) h.Update();
+        foreach (IHardware h in hardware)
+        {
+            if (broken.Contains(h)) continue;
+            try { h.Update(); }
+            catch (Exception ex)
+            {
+                broken.Add(h);
+                Emit(new Dictionary<string, object> { { "type", "error" },
+                    { "message", h.Name + " okunamadı, atlanıyor: " + ex.GetType().Name + ": " + ex.Message } });
+            }
+        }
     }
 
     void ReadCommands()
@@ -182,7 +201,9 @@ class Host
         double cpu = Max(cpuTemps);
         double gpu = Max(gpuCores);
         double hot = Max(gpuHot);
-        bool emergency = cpu >= CpuLimit || gpu >= GpuLimit || hot >= HotspotLimit;
+        bool emergency = wasEmergency
+            ? cpu >= CpuLimit - EmergencyClear || gpu >= GpuLimit - EmergencyClear || hot >= HotspotLimit - EmergencyClear
+            : cpu >= CpuLimit || gpu >= GpuLimit || hot >= HotspotLimit;
         if (emergency != wasEmergency)
         {
             wasEmergency = emergency;

@@ -15,15 +15,15 @@ Kullanmadığın modülü **Ayarlar**'dan kapatabilirsin; kapalı modül arka pl
 
 ## Kurulum
 
-**Normal kullanım:** [Releases](../../releases) sayfasından `LightCore.zip` indir, bir klasöre aç, `LightCore.exe`'yi çalıştır, yönetici iznini onayla. Python, OpenRGB ve fan kütüphanesi paketin içindedir.
+**Normal kullanım:** [Releases](../../releases) sayfasından son sürümün zip dosyasını indir, bir klasöre aç, `LightCore.exe`'yi çalıştır, yönetici iznini onayla. Python, OpenRGB ve fan kütüphanesi paketin içindedir.
 
-**Fan kontrolü için PawnIO:** Anakart fanlarına ve işlemci sıcaklığına erişim için [PawnIO](https://pawnio.eu) sürücüsü gerekir; pakette yoktur. FanControl ya da LibreHardwareMonitor kullandıysan büyük ihtimalle zaten kuruludur. Kurulu değilse program fan sayfasında söyler. FanControl'ü kaldırırken PawnIO'yu kaldırma.
+**Fan kontrolü için PawnIO:** Anakart fanlarına ve işlemci sıcaklığına erişim için [PawnIO](https://pawnio.eu) sürücüsü gerekir. FanControl ya da LibreHardwareMonitor kullandıysan büyük ihtimalle zaten kuruludur. Kurulu değilse **Ayarlar > Kurulum kontrolü**'nde çıkan **PawnIO'yu kur** düğmesine bas: geliştiricinin resmi paketi winget ile kurulur. Sürücü pakete koyulmaz, çünkü resmi imzalı sürümü kapalı kaynaktır ve geliştiricisi GPL lisanslı programların onu paketlemek yerine kurdurmasını istiyor. FanControl'ü kaldırırken PawnIO'yu kaldırma.
 
 SignalRGB, MSI Center ve FanControl gibi aynı donanımı süren programları kapat.
 
 Windows imzasız program uyarısı verebilir; antivirüs düşük seviyeli donanım erişimi için kullanılan sürücüleri bildirebilir. Kaynak kod burada açıktır.
 
-**Kaynak koddan:** Python 3.12+, Bluetooth şerit için `pip install bleak`, OpenRGB'yi `openrgb` klasörüne aç, LibreHardwareMonitor kütüphanesini `fan` klasörüne koy (ya da FanControl kurulu olsun; hazır pakette `fan` klasörü geldiği için gerekmez), PawnIO kurulu olsun, `0_arayuz.bat` dosyasını yönetici olarak çalıştır.
+**Kaynak koddan:** Python 3.12+, Bluetooth şerit için `pip install bleak`, OpenRGB'yi `openrgb` klasörüne aç, LibreHardwareMonitor 0.9.6 kütüphanesini ve bağımlılıklarını (NuGet `LibreHardwareMonitorLib`, netstandard2.0) `fan` klasörüne koy, PawnIO kurulu olsun, `0_arayuz.bat` dosyasını yönetici olarak çalıştır.
 
 ## Uyumluluk
 
@@ -101,9 +101,13 @@ LightCore [GNU GPL v3](LICENSE) ile lisanslıdır: kullanabilir, değiştirebili
 
 ## Kullanılan projeler
 
-Bu depo aşağıdakileri içermez; hazır pakette yanında gelirler, lisansları `LICENSES` klasöründedir:
+Bu depo aşağıdakileri içermez; hazır pakette yanında gelirler. Lisans metinleri [`licenses`](licenses) klasöründedir, pakette `LICENSES` olarak gelir; hangi dosyanın neye ait olduğu `licenses/BENIOKU.txt`'de yazar.
 
-- [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), GPL-2.0-or-later, ayrı süreç olarak SDK bağlantısıyla
-- [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), MPL-2.0
+- [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 1.0, GPL-2.0-or-later: değiştirilmeden, ayrı süreç olarak SDK bağlantısıyla (içinde Qt 6 LGPL-3.0, libusb LGPL-2.1, hidapi BSD, PawnIOLib)
+- [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) 0.9.6, MPL-2.0, ve bağımlılıkları (BlackSharp/DiskInfoToolkit/RAMSPDToolkit MPL-2.0, HidSharp Apache-2.0, .NET kütüphaneleri MIT)
 - [bleak](https://github.com/hbldh/bleak) ve [PyWinRT](https://github.com/pywinrt/pywinrt), MIT: Bluetooth şerit için
-- [PawnIO](https://pawnio.eu): pakette yoktur, ayrıca kurulur
+- Python (PSF), Tcl/Tk (BSD benzeri), PyInstaller önyükleyicisi (GPL-2.0, dağıtım istisnasıyla)
+- [PawnIO](https://pawnio.eu): pakette yoktur; program içinden geliştiricinin resmi winget paketiyle kurulur
+- FanControl kullanılmaz ve gerekmez; yalnızca yedek dosyası (.json) içe aktarılabilir
+
+Ekran görüntüsü paylaşımı [tmpfiles.org](https://tmpfiles.org/tos) ya da [uguu.se](https://uguu.se/faq) kullanır, yalnızca **Yükle**'ye basınca (ya da otomatik yüklemeyi açınca). Bu sitelerin kuralları geçerlidir: başkalarının kişisel bilgisini ve telif hakkı olan içeriği yükleme; tmpfiles'ta saatte en fazla 200 yükleme, dosyalar 48 saatte, uguu'da 3 saatte silinir.
