@@ -1,6 +1,8 @@
 # Değişiklikler
 
-## Sonraki sürüm (yayımlanmadı)
+## 0.0.5 (beta)
+
+İlk herkese açık deneme sürümü. Hata bulursan [Issues](https://github.com/cocabin/LightCore/issues) sayfasında bildir; Log sayfasındaki **Hata raporu kopyala** kişisel bilgileri çıkarılmış bir rapor verir.
 
 - **Ayarlar artık bozulmuyor:** ayar dosyası önce geçici dosyaya yazılıp tek adımda yerine konuyor. Yazma yarıda kesilse de (elektrik kesintisi, Windows'un kapanışta programı sonlandırması) eski ayarlar sağlam kalıyor. Okunamayan dosya silinmiyor, `lightcore_config.json.bozuk` olarak saklanıyor.
 - **Eşitle eğrisi BIOS'taki fanı doğru izliyor:** izlenen fan Otomatik'teyken, onu izleyen fanlar %100'e çıkmak yerine o fanın gerçek hızını kullanıyor.
@@ -8,11 +10,6 @@
 - Aynı saniyede kaydedilen ekran görüntüleri artık birbirinin üstüne yazılmıyor: `Ekran ... (2).png`.
 - "Önceki ayarlara dön" listesinde saat 05:41:16 biçiminde görünüyor.
 - Eski "RGB Kontrol" sürümünden ayar ve başlangıç görevi taşıyan kod kaldırıldı.
-
-## 0.0.5 (beta)
-
-İlk herkese açık deneme sürümü. Hata bulursan [Issues](https://github.com/cocabin/LightCore/issues) sayfasında bildir; Log sayfasındaki **Hata raporu kopyala** kişisel bilgileri çıkarılmış bir rapor verir.
-
 - **PawnIO'yu kur:** fan kontrolü için gereken PawnIO sürücüsü kurulu değilse Ayarlar > Kurulum kontrolü'nde düğme çıkar; geliştiricinin resmi paketi winget ile kurulur.
 - **FanControl'e bağımlılık kalmadı:** fan kütüphanesi yalnızca paketin `fan` klasöründen yüklenir.
 - **Fan güvenliği:** acil durum (%100) sınırın 5°C altına inince biter, sınırda gidip gelmez. Arayüz kısa süre takılırsa fanlar 10 saniye beklemeden BIOS'a dönmez. Bir donanımın sensör okuması çökerse fan kontrolü düşmez, o donanım atlanır.
